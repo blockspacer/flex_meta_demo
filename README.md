@@ -1,6 +1,30 @@
 # About
 
-C++ lib
+Example project for [https://github.com/blockspacer/flextool](https://github.com/blockspacer/flextool)
+
+Uses conanfile and CMakeLists.txt to integrate with flextool
+
+See `flex_meta_demo/src/main.cc` for usage example.
+
+## Before installation
+
+- [installation guide](https://blockspacer.github.io/flex_docs/download/)
+
+- [usage guide](https://blockspacer.github.io/flex_docs/building_projects/)
+
+- Build all required plugins:
+
+`flex_meta_plugin` is plugin example that can be found at [https://github.com/blockspacer/flex_meta_plugin](https://github.com/blockspacer/flex_meta_plugin)
+
+`flex_reflect_plugin` is plugin example that can be found at [https://github.com/blockspacer/flex_reflect_plugin](https://github.com/blockspacer/flex_reflect_plugin)
+
+`flex_support_headers` is header-only library that can simplify usage of `Cling C++ interpreter` with flextool. `flex_support_headers` can be found at [https://github.com/blockspacer/flex_support_headers](https://github.com/blockspacer/flex_support_headers)
+
+Make sure you installed `flex_reflect_plugin`, `flex_meta_plugin` and `flex_support_headers` using `conan`. You can find installation instructions in `README.md` at [https://github.com/blockspacer/flex_meta_plugin](https://github.com/blockspacer/flex_meta_plugin), [https://github.com/blockspacer/flex_support_headers](https://github.com/blockspacer/flex_support_headers) and  [https://github.com/blockspacer/flex_support_headers](https://github.com/blockspacer/flex_support_headers)
+
+Note that plugins can depend on each other, so order of `conan create` may be important (or you will get build errors).
+
+If you built flextool using `conan create`, than `flextool` must be in output of command `conan search flextool`. Same must apply for plugins, example: `conan search flex_meta_plugin`
 
 ## Installation
 

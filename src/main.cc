@@ -97,29 +97,7 @@ SomeStructName {
   SomeStructName() {
     // ...
   }
-//
-//  int foo() {
-//    int i = 123;
-//    return i;
-//  }
-// private:
-//  int bar() {
-//    int i = 123;
-//    return i;
-//  }
-//
-//  inline const int baz() {
-//    int i = 123;
-//    return i;
-//  }
-// public:
-//
-//  int m_foo;
-//  const int* m_bar = nullptr;
-//
-//  std::vector<std::string> m_VecStr1{};
  private:
-  //__attribute__((annotate("{gen};{attr};reflectable;")))
   const int m_bar2 = 2;
 
   __attribute__((annotate("{gen};{attr};reflectable;")))

@@ -5,7 +5,7 @@
 /// \todo use defined(...) to create executeCodeLineAndKeepInSourceFile
 
 // \note if you don't want to keep trailing ';'
-// then place __attribute__ near namespace like below:
+// then place __attribute__ near `namespace{}` like below:
 /**
 // will be replaced with 234432
 namespace
@@ -80,9 +80,34 @@ $executeCodeAndReplace(
 // executeStringWithoutSpaces executes code
 // unlike exec, executeStringWithoutSpaces may use `#include` e.t.c.
 // no return value
+// does not support newline characters or spaces
+// may use `#include` or preprocessor macros
+// example:
+//   $executeStringWithoutSpaces("#include <cling/Interpreter/Interpreter.h>")
+// if you need to execute multiline C++ code line - use "executeCode"
+/**
+  EXAMPLE:
+    // will be replaced with empty string
+    __attribute__((annotate("{gen};{executeCode};\
+    printf(\"Hello world!\");"))) \
+    int SOME_UNIQUE_NAME0
+    ;
+    // if nothing printed, then
+    // replace printf with
+    // LOG(INFO)<<\"Hello!\";"))) \
+**/
 #define $executeStringWithoutSpaces(...) \
   /* generate definition required to use __attribute__ */ \
-  __attribute__((annotate("{gen};{executeStringWithoutSpaces};" __VA_ARGS__)))
+  __attribute__((annotate("{gen};{executeCode};" __VA_ARGS__)))
+
+// executeStringWithoutSpaces that can accept not quoted code line
+/**
+  EXAMPLE:
+    // will be replaced with empty string
+    $executeCodeLine(LOG(INFO) << "Hello world!";)
+**/
+#define $executeCodeLine(...) \
+  __attribute__((annotate("{gen};{executeCode};" #__VA_ARGS__ )))
 
 // executeCodeAndReplace executes code and
 // returns (optional) source code modification
@@ -103,10 +128,6 @@ $executeCodeAndReplace(
           "};" \
       "}();" \
     )))
-
-// executeStringWithoutSpaces that can accept not quoted code line
-#define $executeCodeLine(...) \
-  __attribute__((annotate("{gen};{executeStringWithoutSpaces};" #__VA_ARGS__ )))
 
 // exec is similar to executeCodeAndReplace,
 // but returns empty source code modification

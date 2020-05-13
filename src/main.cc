@@ -1,8 +1,3 @@
-// project_specific_header.hpp
-//   provided by target_include_directories
-//   as demo of integration with compile_commands.json
-//   you must copy compile_commands.json to ${CMAKE_CURRENT_SOURCE_DIR}
-//   like in https://stackoverflow.com/a/60910583
 #include "project_specific_header.hpp"
 
 #include "codegen_macros.hpp"
@@ -105,5 +100,11 @@ SomeStructName {
 };
 
 int main(int argc, char** argv) {
+  Bar bar;
+
+  bar.foo = 1;
+
+  std::cout << "bar.foo = " << bar.foo;
+
   return 0;
 }

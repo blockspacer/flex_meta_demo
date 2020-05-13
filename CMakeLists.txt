@@ -189,11 +189,11 @@ set(flextool_input_files ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
 set(flextool_outdir ${CMAKE_BINARY_DIR})
 message(STATUS "flextool_outdir=${flextool_outdir}")
 # requires set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-execute_process(
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-          ${CMAKE_BINARY_DIR}/compile_commands.json
-          ${CMAKE_CURRENT_SOURCE_DIR}
-)
+#execute_process(
+#  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#          ${CMAKE_BINARY_DIR}/compile_commands.json
+#          ${CMAKE_CURRENT_SOURCE_DIR}
+#)
 
 # TODO: HACK: first run may produce errors
 # second run must be fine if compile_commands.json generated fine
@@ -211,8 +211,8 @@ execute_process(
           # see https://releases.llvm.org/9.0.0/tools/clang/docs/LibTooling.html
           # NOTE: Cling does not support compile_commands.json
           --outdir=${flextool_outdir}
-          --load_plugin ${flex_reflect_plugin}
-          --load_plugin ${flex_meta_plugin}
+          --load_plugin=${flex_reflect_plugin}
+          --load_plugin=${flex_meta_plugin}
           --extra-arg=-I${cling_includes}
           --extra-arg=-I${clang_includes}
           # NOTE: Cling does not support compile_commands.json
@@ -239,7 +239,7 @@ message(STATUS "flextool output: ${retcode} ${_ERROR_VARIABLE}")
 
 # Generate clang compilation database
 # see https://stackoverflow.com/a/31086619/10904212
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+#set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(cmake_platform_detection REQUIRED)
 run_cmake_platform_detection()
@@ -369,8 +369,8 @@ add_custom_command(TARGET ${LIB_NAME}
             # see https://releases.llvm.org/9.0.0/tools/clang/docs/LibTooling.html
             # NOTE: Cling does not support compile_commands.json
             --outdir=${flextool_outdir}
-            --load_plugin ${flex_reflect_plugin}
-            --load_plugin ${flex_meta_plugin}
+            --load_plugin=${flex_reflect_plugin}
+            --load_plugin=${flex_meta_plugin}
             --extra-arg=-I${cling_includes}
             --extra-arg=-I${clang_includes}
             # NOTE: Cling does not support compile_commands.json

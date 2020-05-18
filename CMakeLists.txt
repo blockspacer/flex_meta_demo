@@ -13,16 +13,22 @@ set(LIB_NAME ${PROJECT_NAME})
 
 option(ENABLE_TESTS "Enable tests" OFF)
 
-set(BUILD_SHARED_LIBS
+# Hack to depend NOT on CONAN_PKG::libname, but on libname directly
+# See for details
+# https://docs.conan.io/en/latest/developing_packages/workspaces.html
+set(LOCAL_BUILD FALSE CACHE BOOL "LOCAL_BUILD")
+message(STATUS "LOCAL_BUILD=${LOCAL_BUILD}")
+
+set(${PROJECT_NAME}_BUILD_SHARED_LIBS
   TRUE CACHE BOOL
   "Use .so/.dll")
 
-if(BUILD_SHARED_LIBS)
+if(${PROJECT_NAME}_BUILD_SHARED_LIBS)
   set(CORE_LIB_TYPE SHARED)
 else()
   set(CORE_LIB_TYPE STATIC)
   message(FATAL_ERROR "ONLY SHARED PLUGINS SUPPORTED FOR NOW")
-endif(BUILD_SHARED_LIBS)
+endif(${PROJECT_NAME}_BUILD_SHARED_LIBS)
 
 set(ENABLE_CLING TRUE CACHE BOOL "ENABLE_CLING")
 message(STATUS "ENABLE_CLING=${ENABLE_CLING}")
@@ -108,8 +114,7 @@ message(STATUS "${FetchContent_conan_auto_install}_SOURCE_DIR = ${${FetchContent
 message(STATUS "${FetchContent_conan_auto_install}_BINARY_DIR = ${${FetchContent_conan_auto_install}_BINARY_DIR}")
 include(${${FetchContent_conan_auto_install}_SOURCE_DIR}/conan-auto-install.cmake)
 option(CONAN_AUTO_INSTALL "Let CMake call conan install automatically"
-  #OFF # disable by default cause llvm requires long build with CONAN_LLVM_SINGLE_THREAD_BUILD=1
-  ON
+  OFF
 )
 if (CONAN_AUTO_INSTALL)
   set(CONAN_PROFILE
@@ -148,7 +153,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 list(APPEND CMAKE_PROGRAM_PATH ${CONAN_BIN_DIRS})
 # TODO: make better: link lib dirs
 link_directories(${CONAN_LIB_DIRS})
-include(HelperFlextool) # requires list(APPEND CMAKE_PROGRAM_PATH ${CONAN_BIN_DIRS})
+#
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/HelperFlextool.cmake)
+#
 set(flex_reflect_plugin
   ${CONAN_FLEX_REFLECT_PLUGIN_ROOT}/lib/flex_reflect_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}
 )
@@ -410,9 +417,13 @@ list(APPEND USED_3DPARTY_LIBS
 if(NOT TARGET CONAN_PKG::flexlib)
   message(FATAL_ERROR "Use flexlib from conan")
 endif()
+set(flexlib CONAN_PKG::flexlib)
+if(LOCAL_BUILD)
+  set(flexlib flexlib)
+endif(LOCAL_BUILD)
 
 list(APPEND USED_3DPARTY_LIBS
-  CONAN_PKG::flexlib
+  ${flexlib}
   CONAN_PKG::basis
   CONAN_PKG::clang_folly_conan
   CONAN_PKG::boost

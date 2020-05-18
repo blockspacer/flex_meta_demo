@@ -35,15 +35,12 @@ class flex_meta_demo_conan_project(conan_build_helper.CMakePackage):
     topics = ('c++')
 
     options = {
-        "shared": [True, False],
         "use_system_boost": [True, False],
         "enable_clang_from_conan": [True, False],
         "enable_sanitizers": [True, False]
     }
 
     default_options = (
-        #"*:shared=False",
-        "shared=True",
         "enable_clang_from_conan=False",
         "use_system_boost=False",
         "enable_sanitizers=False",
@@ -142,7 +139,7 @@ class flex_meta_demo_conan_project(conan_build_helper.CMakePackage):
                        "scripts/*", "tools/*", "codegen/*", "assets/*", "conf/*",
                        "docs/*", "licenses/*", "patches/*", "resources/*",
                        "submodules/*", "thirdparty/*", "third-party/*",
-                       "third_party/*", "base/*", "build/*", "flex_meta_demo/*")
+                       "third_party/*", "flex_meta_demo/*")
 
     #settings = "os", "compiler", "build_type", "arch"
     settings = "os_build", "os", "arch", "compiler", "build_type", "arch_build"
@@ -190,19 +187,17 @@ class flex_meta_demo_conan_project(conan_build_helper.CMakePackage):
 
       self.requires("flex_meta_plugin/master@conan/stable")
 
+      # \note dispatcher must be thread-safe,
+      # so use entt after patch https://github.com/skypjack/entt/issues/449
+      # see https://github.com/skypjack/entt/commit/74f3df83dbc9fc4b43b8cfb9d71ba02234bd5c4a
+      self.requires("entt/3.3.2")
+
     def _configure_cmake(self):
         cmake = CMake(self)
         cmake.parallel = True
         cmake.verbose = True
 
         cmake.definitions["CONAN_AUTO_INSTALL"] = 'OFF'
-
-        self.output.info(self.options)
-        if self.options.shared:
-          self.output.info('Enabled BUILD_SHARED_LIBS')
-          cmake.definitions["BUILD_SHARED_LIBS"] = "ON"
-        else:
-          self.output.error('Disabled BUILD_SHARED_LIBS')
 
         self.add_cmake_option(cmake, "ENABLE_TESTS", self._is_tests_enabled())
 

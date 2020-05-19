@@ -187,6 +187,8 @@ class flex_meta_demo_conan_project(conan_build_helper.CMakePackage):
 
       self.requires("flex_meta_plugin/master@conan/stable")
 
+      self.requires("flex_typeclass_plugin/master@conan/stable")
+
       # \note dispatcher must be thread-safe,
       # so use entt after patch https://github.com/skypjack/entt/issues/449
       # see https://github.com/skypjack/entt/commit/74f3df83dbc9fc4b43b8cfb9d71ba02234bd5c4a

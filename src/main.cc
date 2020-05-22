@@ -56,27 +56,27 @@ int SOME_UNIQUE_NAME1
 ;
 
 // will be replaced with empty string
-$executeCodeLine(LOG(INFO) << "Hello world!";)
+_executeCodeLine(LOG(INFO) << "Hello world!";)
 int a0;
 
 // will be replaced with empty string
-$executeCodeAndEmptyReplace(
+_executeCodeAndEmptyReplace(
   LOG(INFO) << "Hello me!";
 ) int a1;
 
 // will be replaced with int a12347
-$executeCodeAndReplace(
+_executeCodeAndReplace(
   new llvm::Optional<std::string>{"int a12347;"};
 ) int a2;
 
 // will be replaced with int a56
-$executeCodeAndReplace(
+_executeCodeAndReplace(
   new llvm::Optional<std::string>{"int a56;"};
 ) int a3;
 
 // will be replaced with 234432
 namespace
-$executeCodeAndReplace(
+_executeCodeAndReplace(
   new llvm::Optional<std::string>{"int a234432;"};
 ) {}
 
@@ -84,7 +84,7 @@ $executeCodeAndReplace(
 #include <vector>
 
 struct
-  $apply(
+  _apply(
     make_reflect
   )
 SomeStructName {

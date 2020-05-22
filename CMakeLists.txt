@@ -223,12 +223,6 @@ message(STATUS "chromium_build_util_headers=${chromium_build_util_headers}")
 set(flextool_input_files ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc)
 set(flextool_outdir ${CMAKE_BINARY_DIR})
 message(STATUS "flextool_outdir=${flextool_outdir}")
-# requires set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-#execute_process(
-#  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-#          ${CMAKE_BINARY_DIR}/compile_commands.json
-#          ${CMAKE_CURRENT_SOURCE_DIR}
-#)
 
 # Configured file will be loaded by Cling C++ interpreter.
 # Loaded by Cling file can change global variables via `extern`,
@@ -242,50 +236,6 @@ configure_file(
 set(flex_typeclass_plugin_settings
   ${CMAKE_CURRENT_BINARY_DIR}/flex_typeclass_plugin_settings.cc
 )
-
-# TODO: HACK: first run may produce errors
-# second run must be fine if compile_commands.json generated fine
-#
-# requires existing compile_commands.json so
-# must be run before build, but after configure step
-#execute_process(
-#  COMMAND ${flextool}
-#          --indir=${CMAKE_CURRENT_SOURCE_DIR}
-#          # outdir can contain `compile_commands.json`.
-#          # To create compile_commands.json
-#          # set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-#          # or
-#          # set_target_properties(... ENABLE_EXPORTS 1)
-#          # see https://releases.llvm.org/9.0.0/tools/clang/docs/LibTooling.html
-#          # NOTE: Cling does not support compile_commands.json
-#          --outdir=${flextool_outdir}
-#          --load_plugin=${flex_reflect_plugin}
-#          --load_plugin=${flex_meta_plugin}
-#          --load_plugin=${flex_typeclass_plugin}
-#          --extra-arg=-I${cling_includes}
-#          --extra-arg=-I${clang_includes}
-#          # NOTE: Cling does not support compile_commands.json
-#          # so we must add headers used by `flex_support_headers` package
-#          # place into `flex_support_headers` includes that can be used by Cling
-#          --extra-arg=-I${chromium_base_headers}
-#          --extra-arg=-I${chromium_build_util_headers}
-#          --extra-arg=-I${basis_headers}
-#          --extra-arg=-I${flexlib_headers}
-#          --extra-arg=-Wno-undefined-inline
-#          # NOTE: we provide compile_commands.json to flextool
-#          # with information about project specific include dirs and defines
-#          # so you don't need to provide `-D` or `-I` arguments to flextool `by hand`
-#          ${flextool_extra_args}
-#          ${flextool_input_files}
-#          --cling_scripts=${flex_support_headers}
-#          --cling_scripts=${flex_typeclass_plugin_settings}
-#          #TIMEOUT 7200 # sec
-#  RESULT_VARIABLE retcode
-#  ERROR_VARIABLE _ERROR_VARIABLE)
-#if(NOT "${retcode}" STREQUAL "0")
-#  message(FATAL_ERROR "Bad exit status ${retcode} ${_ERROR_VARIABLE}")
-#endif()
-#message(STATUS "flextool output: ${retcode} ${_ERROR_VARIABLE}")
 
 # Generate clang compilation database
 # see https://stackoverflow.com/a/31086619/10904212
@@ -398,7 +348,8 @@ list(APPEND flex_meta_demo_generated_SOURCES
   ${flextool_outdir}/main.cc.generated
 )
 
-# generated files
+# Set GENERATED properties of your generated source file.
+# So cmake won't complain about missing source file.
 set_source_files_properties(
   ${flex_meta_demo_generated_SOURCES}
   PROPERTIES GENERATED 1)
@@ -411,60 +362,55 @@ add_executable(${LIB_NAME} #${CORE_LIB_TYPE}
   ${flex_meta_demo_generated_SOURCES}
 )
 
-# This is the second signature of add_custom_command
-# which adds a custom command to a target such as a library or executable.
-# This is useful for performing an operation before or after building the target.
-# The command becomes part of the target and
-# will only execute when the target itself is built.
-# If the target is already built, the command will not execute
+# you can link with library via --extra-arg=-l
+# example: --extra-arg=-l${flexlib_file}
 add_custom_command(
-    #TARGET ${LIB_NAME}
-    # On Visual Studio Generators, run before any other rules are executed within the target. On other generators, run just before PRE_LINK commands
-    #PRE_BUILD
-    OUTPUT ${flex_meta_demo_generated_SOURCES}
-    COMMAND ${CMAKE_COMMAND} -E echo " Removing ${flex_meta_demo_generated_SOURCES}."
-    COMMAND ${CMAKE_COMMAND} -E remove ${flex_meta_demo_generated_SOURCES}
-    COMMAND ${CMAKE_COMMAND} -E echo " Creating ${flex_meta_demo_generated_SOURCES}."
-    COMMAND ${flextool}
-            --indir=${CMAKE_CURRENT_SOURCE_DIR}
-            # outdir can contain `compile_commands.json`.
-            # To create compile_commands.json
-            # set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-            # or
-            # set_target_properties(... ENABLE_EXPORTS 1)
-            # see https://releases.llvm.org/9.0.0/tools/clang/docs/LibTooling.html
-            # NOTE: Cling does not support compile_commands.json
-            --outdir=${flextool_outdir}
-            --load_plugin=${flex_reflect_plugin}
-            --load_plugin=${flex_typeclass_plugin}
-            --load_plugin=${flex_meta_plugin}
-            --extra-arg=-I${cling_includes}
-            --extra-arg=-I${clang_includes}
-            # NOTE: Cling does not support compile_commands.json
-            # so we must add headers used by `flex_support_headers` package
-            # place into `flex_support_headers` includes that can be used by Cling
-            --extra-arg=-I${chromium_base_headers}
-            --extra-arg=-I${chromium_build_util_headers}
-            --extra-arg=-I${basis_headers}
-            --extra-arg=-I${flexlib_headers}
-            --extra-arg=-Wno-undefined-inline
-            # NOTE: we provide compile_commands.json to flextool
-            # with information about project specific include dirs and defines
-            # so you don't need to provide `-D` or `-I` arguments to flextool `by hand`
-            ${flextool_extra_args}
-            ${flextool_input_files}
-            --cling_scripts=${flex_support_headers}
-            --cling_scripts=${flex_typeclass_plugin_settings}
+    OUTPUT
+      ${flex_meta_demo_generated_SOURCES}
+    # code generator COMMAND will only be launched
+    # if some of DEPENDS files were changed.
+    DEPENDS
+      ${flextool_input_files}
+    COMMAND
+      ${CMAKE_COMMAND} -E echo " Removing ${flex_meta_demo_generated_SOURCES}."
+    COMMAND
+      ${CMAKE_COMMAND} -E remove ${flex_meta_demo_generated_SOURCES}
+    COMMAND
+      ${CMAKE_COMMAND} -E echo " Creating ${flex_meta_demo_generated_SOURCES}."
+    COMMAND
+      ${flextool}
+          --indir=${CMAKE_CURRENT_SOURCE_DIR}
+          --outdir=${flextool_outdir}
+          --load_plugin=${flex_reflect_plugin}
+          --load_plugin=${flex_typeclass_plugin}
+          --load_plugin=${flex_meta_plugin}
+          --extra-arg=-I${cling_includes}
+          --extra-arg=-I${clang_includes}
+          # NOTE: Cling does not support compile_commands.json
+          # so we must add headers used by `flex_support_headers` package
+          # place into `flex_support_headers` includes that can be used by Cling
+          --extra-arg=-I${chromium_base_headers}
+          --extra-arg=-I${chromium_build_util_headers}
+          --extra-arg=-I${basis_headers}
+          --extra-arg=-I${flexlib_headers}
+          --extra-arg=-Wno-undefined-inline
+          ${flextool_extra_args}
+          ${flextool_input_files}
+          # cling_scripts must be ending argument
+          --cling_scripts=${flex_support_headers}
+          --cling_scripts=${flex_typeclass_plugin_settings}
     COMMENT "running ${flextool}"
     VERBATIM # to support \t for example
 )
 
-add_relative_include_dir(${LIB_NAME} PUBLIC PUBLIC "include")
-add_relative_include_dir(${LIB_NAME} PUBLIC PUBLIC "src")
-# NOTE: we provide compile_commands.json to flextool
-# with information about project specific include dirs and defines
-# so you don't need to provide `-D` or `-I` arguments to flextool `by hand`
-add_relative_include_dir(${LIB_NAME} PUBLIC PUBLIC "src/project_specific_headers")
+add_relative_include_dir(${LIB_NAME}
+  PUBLIC PUBLIC "include")
+
+add_relative_include_dir(${LIB_NAME}
+  PUBLIC PUBLIC "src")
+
+add_relative_include_dir(${LIB_NAME}
+  PUBLIC PUBLIC "src/project_specific_headers")
 
 #target_include_directories(${LIB_NAME} PRIVATE
 #  ${CMAKE_CURRENT_SOURCE_DIR}/src/project_specific_header

@@ -9,7 +9,7 @@
 /**
 // will be replaced with 234432
 namespace
-$executeCodeAndReplace(
+_executeCodeAndReplace(
   new llvm::Optional<std::string>{"234432"};
 ) {}
   **/
@@ -24,22 +24,22 @@ int SOME_UNIQUE_NAME1
 ;
 
 // will be replaced with empty string
-$executeCodeLine(LOG(INFO) << "Hello world!";)
+_executeCodeLine(LOG(INFO) << "Hello world!";)
 int a0;
 
 // will be replaced with empty string
-$executeCodeAndEmptyReplace(
+_executeCodeAndEmptyReplace(
   LOG(INFO) << "Hello me!";
 ) int a1;
 
 // will be replaced with 1234711
 class
-$executeCodeAndReplace(
+_executeCodeAndReplace(
   new llvm::Optional<std::string>{"1234711"};
 ) {};
 
 // will be replaced with 56
-$executeCodeAndReplace(
+_executeCodeAndReplace(
   new llvm::Optional<std::string>{"56"};
 ) int a3;
 
@@ -47,7 +47,7 @@ $executeCodeAndReplace(
 #include <vector>
 
 struct
-  $apply(
+  _apply(
     make_reflect
   )
 SomeStructName {
@@ -71,7 +71,7 @@ SomeStructName {
 /**
  * USAGE:
 // will be replaced with 123471
-$executeCodeAndReplace(
+_executeCodeAndReplace(
   new llvm::Optional<std::string>{"123471"};
 ) int GEN_UNIQUE_NAME(__tmp__executeCodeAndReplace);
  **/
@@ -83,7 +83,7 @@ $executeCodeAndReplace(
 // does not support newline characters or spaces
 // may use `#include` or preprocessor macros
 // example:
-//   $executeStringWithoutSpaces("#include <cling/Interpreter/Interpreter.h>")
+//   _executeStringWithoutSpaces("#include <cling/Interpreter/Interpreter.h>")
 // if you need to execute multiline C++ code line - use "executeCode"
 /**
   EXAMPLE:
@@ -96,7 +96,7 @@ $executeCodeAndReplace(
     // replace printf with
     // LOG(INFO)<<\"Hello!\";"))) \
 **/
-#define $executeStringWithoutSpaces(...) \
+#define _executeStringWithoutSpaces(...) \
   /* generate definition required to use __attribute__ */ \
   __attribute__((annotate("{gen};{executeCode};" __VA_ARGS__)))
 
@@ -104,20 +104,20 @@ $executeCodeAndReplace(
 /**
   EXAMPLE:
     // will be replaced with empty string
-    $executeCodeLine(LOG(INFO) << "Hello world!";)
+    _executeCodeLine(LOG(INFO) << "Hello world!";)
 **/
-#define $executeCodeLine(...) \
+#define _executeCodeLine(...) \
   __attribute__((annotate("{gen};{executeCode};" #__VA_ARGS__ )))
 
 // executeCodeAndReplace executes code and
 // returns (optional) source code modification
-#define $executeCodeAndReplace(...) \
+#define _executeCodeAndReplace(...) \
   /* generate definition required to use __attribute__ */ \
   __attribute__((annotate("{gen};{executeCodeAndReplace};" #__VA_ARGS__)))
 
 // shortened executeCodeAndReplace syntax
 // param1 - returns (optional) source code modification
-#define $executeCodeAndReplaceTo(RETVAL, ...) \
+#define _executeCodeAndReplaceTo(RETVAL, ...) \
   /* generate definition required to use __attribute__ */ \
   __attribute__((annotate( \
       "{gen};{executeCodeAndReplace};" \
@@ -131,7 +131,7 @@ $executeCodeAndReplace(
 
 // exec is similar to executeCodeAndReplace,
 // but returns empty source code modification
-#define $executeCodeAndEmptyReplace(...) \
+#define _executeCodeAndEmptyReplace(...) \
   /* generate definition required to use __attribute__ */ \
   __attribute__((annotate( \
       "{gen};{executeCodeAndReplace};" \
@@ -141,6 +141,6 @@ $executeCodeAndReplace(
       "}();" \
     )))
 
-#define $apply(...) \
+#define _apply(...) \
   __attribute__((annotate("{gen};{funccall};" #__VA_ARGS__)))
 

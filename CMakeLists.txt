@@ -395,6 +395,9 @@ add_custom_command(
           --extra-arg=-I${flexlib_headers}
           --extra-arg=-I${flextool_outdir}
           --extra-arg=-Wno-undefined-inline
+          # custom define for basis
+          --extra-arg=-DDISABLE_DOCTEST=1
+          --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
           ${flextool_extra_args}
           ${flextool_input_files}
           # cling_scripts must be ending argument
@@ -503,7 +506,8 @@ set_target_properties(${LIB_NAME}
 )
 
 # POSITION_INDEPENDENT_CODE for -fPIC
-set_property(TARGET ${LIB_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+set_property(TARGET ${LIB_NAME}
+  PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if(ENABLE_CLING)
   find_package(Cling REQUIRED)

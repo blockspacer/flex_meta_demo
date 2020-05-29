@@ -1,4 +1,4 @@
-#include "project_specific_header.hpp"
+//#include "project_specific_header.hpp"
 
 #include "codegen_macros.hpp"
 
@@ -100,11 +100,11 @@ SomeStructName {
 };
 
 int main(int argc, char** argv) {
-  Bar bar;
-
-  bar.foo = 1;
-
-  std::cout << "bar.foo = " << bar.foo;
+  //Bar bar;
+  //
+  //bar.foo = 1;
+  //
+  //std::cout << "bar.foo = " << bar.foo;
 
   return 0;
 }

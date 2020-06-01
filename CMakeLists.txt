@@ -16,8 +16,8 @@ option(ENABLE_TESTS "Enable tests" OFF)
 # Hack to depend NOT on CONAN_PKG::libname, but on libname directly
 # See for details
 # https://docs.conan.io/en/latest/developing_packages/workspaces.html
-set(LOCAL_BUILD FALSE CACHE BOOL "LOCAL_BUILD")
-message(STATUS "LOCAL_BUILD=${LOCAL_BUILD}")
+set(${PROJECT_NAME}_LOCAL_BUILD FALSE CACHE BOOL "${PROJECT_NAME}_LOCAL_BUILD")
+message(STATUS "${PROJECT_NAME}_LOCAL_BUILD=${${PROJECT_NAME}_LOCAL_BUILD}")
 
 set(${PROJECT_NAME}_BUILD_SHARED_LIBS
   TRUE CACHE BOOL
@@ -156,40 +156,19 @@ link_directories(${CONAN_LIB_DIRS})
 #
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/HelperFlextool.cmake)
 #
-if(LOCAL_BUILD)
-  get_property(flex_reflect_plugin_location TARGET flex_reflect_plugin PROPERTY LIBRARY_OUTPUT_DIRECTORY)
-  message (STATUS "flex_reflect_plugin_location == ${flex_reflect_plugin_location}")
-  set(flex_reflect_plugin
-    ${flex_reflect_plugin_location}/flex_reflect_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}
-  )
-else()
-  set(flex_reflect_plugin
-    ${CONAN_FLEX_REFLECT_PLUGIN_ROOT}/lib/flex_reflect_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}
-  )
+find_package(flex_reflect_plugin REQUIRED)
+if(${flex_reflect_plugin_FILE} STREQUAL "")
+  message(FATAL_ERROR "unable to find flex_reflect_plugin_FILE")
 endif()
 #
-if(LOCAL_BUILD)
-  get_property(flex_meta_plugin_location TARGET flex_meta_plugin PROPERTY LIBRARY_OUTPUT_DIRECTORY)
-  message (STATUS "flex_meta_plugin_location == ${flex_meta_plugin_location}")
-  set(flex_meta_plugin
-    ${flex_meta_plugin_location}/flex_meta_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}
-  )
-else()
-  set(flex_meta_plugin
-    ${CONAN_FLEX_META_PLUGIN_ROOT}/lib/flex_meta_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}
-  )
+find_package(flex_meta_plugin REQUIRED)
+if(${flex_meta_plugin_FILE} STREQUAL "")
+  message(FATAL_ERROR "unable to find flex_meta_plugin_FILE")
 endif()
 #
-if(LOCAL_BUILD)
-  get_property(flex_typeclass_plugin_location TARGET flex_typeclass_plugin PROPERTY LIBRARY_OUTPUT_DIRECTORY)
-  message (STATUS "flex_typeclass_plugin_location == ${flex_typeclass_plugin_location}")
-  set(flex_typeclass_plugin
-    ${flex_typeclass_plugin_location}/flex_typeclass_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}
-  )
-else()
-  set(flex_typeclass_plugin
-    ${CONAN_FLEX_TYPECLASS_PLUGIN_ROOT}/lib/flex_typeclass_plugin${CMAKE_SHARED_LIBRARY_SUFFIX}
-  )
+find_package(flex_typeclass_plugin REQUIRED)
+if(${flex_typeclass_plugin_FILE} STREQUAL "")
+  message(FATAL_ERROR "unable to find flex_typeclass_plugin_FILE")
 endif()
 #
 set(cling_includes
@@ -200,18 +179,17 @@ set(clang_includes
   ${CONAN_CLING_CONAN_ROOT}/lib/clang/5.0.0/include
 )
 message(STATUS "clang_includes=${clang_includes}")
-set(flex_support_headers
-  ${CONAN_FLEX_SUPPORT_HEADERS_ROOT}/include/flex/cling_preloader.inc
-)
-message(STATUS "flex_support_headers=${flex_support_headers}")
-set(flexlib_headers
-  ${CONAN_FLEXLIB_ROOT}/include
-)
-message(STATUS "flexlib_headers=${flexlib_headers}")
-set(basis_headers
-  ${CONAN_BASIS_ROOT}/include
-)
-message(STATUS "basis_headers=${basis_headers}")
+#
+find_package(flex_support_headers REQUIRED)
+if(${flex_support_header_HEADER_FILE} STREQUAL "")
+  message(FATAL_ERROR "unable to find flex_support_header_HEADER_FILE")
+endif()
+#
+find_package(flexlib REQUIRED)
+if(${flexlib_HEADER_DIR} STREQUAL "")
+  message(FATAL_ERROR "unable to find flexlib_HEADER_DIR")
+endif()
+#
 set(chromium_base_headers
   ${CONAN_CHROMIUM_BASE_ROOT}/include
 )
@@ -262,6 +240,11 @@ check_supported_os() # from Utils.cmake
 
 # Keep symbols for JIT resolution
 set(LLVM_NO_DEAD_STRIP 1)
+
+find_package(basis REQUIRED)
+if(${basis_HEADER_DIR} STREQUAL "")
+  message(FATAL_ERROR "unable to find basis_HEADER_DIR")
+endif()
 
 if(NOT TARGET CONAN_PKG::chromium_base)
   message(FATAL_ERROR "Use chromium_base from conan")
@@ -381,9 +364,9 @@ add_custom_command(
       ${flextool}
           --indir=${CMAKE_CURRENT_SOURCE_DIR}
           --outdir=${flextool_outdir}
-          --load_plugin=${flex_reflect_plugin}
-          --load_plugin=${flex_typeclass_plugin}
-          --load_plugin=${flex_meta_plugin}
+          --load_plugin=${flex_reflect_plugin_FILE}
+          --load_plugin=${flex_typeclass_plugin_FILE}
+          --load_plugin=${flex_meta_plugin_FILE}
           --extra-arg=-I${cling_includes}
           --extra-arg=-I${clang_includes}
           # NOTE: Cling does not support compile_commands.json
@@ -391,8 +374,8 @@ add_custom_command(
           # place into `flex_support_headers` includes that can be used by Cling
           --extra-arg=-I${chromium_base_headers}
           --extra-arg=-I${chromium_build_util_headers}
-          --extra-arg=-I${basis_headers}
-          --extra-arg=-I${flexlib_headers}
+          --extra-arg=-I${basis_HEADER_DIR}
+          --extra-arg=-I${flexlib_HEADER_DIR}
           --extra-arg=-I${flextool_outdir}
           --extra-arg=-Wno-undefined-inline
           # custom define for basis
@@ -401,9 +384,9 @@ add_custom_command(
           ${flextool_extra_args}
           ${flextool_input_files}
           # cling_scripts must be ending argument
-          --cling_scripts=${flex_support_headers}
+          --cling_scripts=${flex_support_header_HEADER_FILE}
           --cling_scripts=${flex_typeclass_plugin_settings}
-    COMMENT "running ${flextool}"
+    COMMENT "(flex_meta_demo) running ${flextool}"
     VERBATIM # to support \t for example
 )
 
@@ -425,17 +408,9 @@ list(APPEND USED_3DPARTY_LIBS
   ${build_util_LIB}
 )
 
-if(NOT TARGET CONAN_PKG::flexlib)
-  message(FATAL_ERROR "Use flexlib from conan")
-endif()
-set(flexlib CONAN_PKG::flexlib)
-if(LOCAL_BUILD)
-  set(flexlib flexlib)
-endif(LOCAL_BUILD)
-
 list(APPEND USED_3DPARTY_LIBS
-  ${flexlib}
-  CONAN_PKG::basis
+  ${flexlib_LIB}
+  ${basis_LIB}
   CONAN_PKG::clang_folly_conan
   CONAN_PKG::boost
   CONAN_PKG::double-conversion

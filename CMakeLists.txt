@@ -345,6 +345,34 @@ add_executable(${LIB_NAME} #${CORE_LIB_TYPE}
   ${flex_meta_demo_generated_SOURCES}
 )
 
+set(FULL_CMD
+  ${flextool}
+      --indir=${CMAKE_CURRENT_SOURCE_DIR}
+      --outdir=${flextool_outdir}
+      --load_plugin=${flex_reflect_plugin_FILE}
+      --load_plugin=${flex_typeclass_plugin_FILE}
+      --load_plugin=${flex_meta_plugin_FILE}
+      --extra-arg=-I${cling_includes}
+      --extra-arg=-I${clang_includes}
+      # NOTE: Cling does not support compile_commands.json
+      # so we must add headers used by `flex_support_headers` package
+      # place into `flex_support_headers` includes that can be used by Cling
+      --extra-arg=-I${chromium_base_headers}
+      --extra-arg=-I${chromium_build_util_headers}
+      --extra-arg=-I${basis_HEADER_DIR}
+      --extra-arg=-I${flexlib_HEADER_DIR}
+      --extra-arg=-I${flextool_outdir}
+      --extra-arg=-Wno-undefined-inline
+      # custom define for basis
+      --extra-arg=-DDISABLE_DOCTEST=1
+      --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
+      ${flextool_extra_args}
+      ${flextool_input_files}
+      # cling_scripts must be ending argument
+      --cling_scripts=${flex_support_header_HEADER_FILE}
+      --cling_scripts=${flex_typeclass_plugin_settings}
+)
+
 # you can link with library via --extra-arg=-l
 # example: --extra-arg=-l${flexlib_file}
 add_custom_command(
@@ -361,31 +389,12 @@ add_custom_command(
     COMMAND
       ${CMAKE_COMMAND} -E echo " Creating ${flex_meta_demo_generated_SOURCES}."
     COMMAND
-      ${flextool}
-          --indir=${CMAKE_CURRENT_SOURCE_DIR}
-          --outdir=${flextool_outdir}
-          --load_plugin=${flex_reflect_plugin_FILE}
-          --load_plugin=${flex_typeclass_plugin_FILE}
-          --load_plugin=${flex_meta_plugin_FILE}
-          --extra-arg=-I${cling_includes}
-          --extra-arg=-I${clang_includes}
-          # NOTE: Cling does not support compile_commands.json
-          # so we must add headers used by `flex_support_headers` package
-          # place into `flex_support_headers` includes that can be used by Cling
-          --extra-arg=-I${chromium_base_headers}
-          --extra-arg=-I${chromium_build_util_headers}
-          --extra-arg=-I${basis_HEADER_DIR}
-          --extra-arg=-I${flexlib_HEADER_DIR}
-          --extra-arg=-I${flextool_outdir}
-          --extra-arg=-Wno-undefined-inline
-          # custom define for basis
-          --extra-arg=-DDISABLE_DOCTEST=1
-          --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
-          ${flextool_extra_args}
-          ${flextool_input_files}
-          # cling_scripts must be ending argument
-          --cling_scripts=${flex_support_header_HEADER_FILE}
-          --cling_scripts=${flex_typeclass_plugin_settings}
+      "${CMAKE_COMMAND}"
+      -E
+      echo
+      "executing command: ${FULL_CMD}"
+    COMMAND
+      ${FULL_CMD}
     COMMENT "(flex_meta_demo) running ${flextool}"
     VERBATIM # to support \t for example
 )

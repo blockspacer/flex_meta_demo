@@ -181,8 +181,8 @@ set(clang_includes
 message(STATUS "clang_includes=${clang_includes}")
 #
 find_package(flex_support_headers REQUIRED)
-if(${flex_support_header_HEADER_FILE} STREQUAL "")
-  message(FATAL_ERROR "unable to find flex_support_header_HEADER_FILE")
+if(${flex_support_headers_HEADER_FILE} STREQUAL "")
+  message(FATAL_ERROR "unable to find flex_support_headers_HEADER_FILE")
 endif()
 #
 find_package(flexlib REQUIRED)
@@ -237,6 +237,17 @@ enable_colored_diagnostics() # from Utils.cmake
 print_cmake_system_info() # from Utils.cmake
 
 check_supported_os() # from Utils.cmake
+
+find_package(cmake_helper_utils REQUIRED)
+
+# prefer ASCII for folder names
+force_latin_paths() # from cmake_helper_utils (conan package)
+
+# out dirs (CMAKE_*_OUTPUT_DIRECTORY) must be not empty
+validate_out_dirs() # from cmake_helper_utils (conan package)
+
+# In-source builds not allowed
+validate_out_source_build(WARNING) # from cmake_helper_utils (conan package)
 
 # Keep symbols for JIT resolution
 set(LLVM_NO_DEAD_STRIP 1)
@@ -343,60 +354,6 @@ set_source_files_properties(
 add_executable(${LIB_NAME} #${CORE_LIB_TYPE}
   ${flex_meta_demo_SOURCES}
   ${flex_meta_demo_generated_SOURCES}
-)
-
-set(FULL_CMD
-  ${flextool}
-      --indir=${CMAKE_CURRENT_SOURCE_DIR}
-      --outdir=${flextool_outdir}
-      --load_plugin=${flex_reflect_plugin_FILE}
-      --load_plugin=${flex_typeclass_plugin_FILE}
-      --load_plugin=${flex_meta_plugin_FILE}
-      --extra-arg=-I${cling_includes}
-      --extra-arg=-I${clang_includes}
-      # NOTE: Cling does not support compile_commands.json
-      # so we must add headers used by `flex_support_headers` package
-      # place into `flex_support_headers` includes that can be used by Cling
-      --extra-arg=-I${chromium_base_headers}
-      --extra-arg=-I${chromium_build_util_headers}
-      --extra-arg=-I${basis_HEADER_DIR}
-      --extra-arg=-I${flexlib_HEADER_DIR}
-      --extra-arg=-I${flextool_outdir}
-      --extra-arg=-Wno-undefined-inline
-      # custom define for basis
-      --extra-arg=-DDISABLE_DOCTEST=1
-      --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
-      ${flextool_extra_args}
-      ${flextool_input_files}
-      # cling_scripts must be ending argument
-      --cling_scripts=${flex_support_header_HEADER_FILE}
-      --cling_scripts=${flex_typeclass_plugin_settings}
-)
-
-# you can link with library via --extra-arg=-l
-# example: --extra-arg=-l${flexlib_file}
-add_custom_command(
-    OUTPUT
-      ${flex_meta_demo_generated_SOURCES}
-    # code generator COMMAND will only be launched
-    # if some of DEPENDS files were changed.
-    DEPENDS
-      ${flextool_input_files}
-    COMMAND
-      ${CMAKE_COMMAND} -E echo " Removing ${flex_meta_demo_generated_SOURCES}."
-    COMMAND
-      ${CMAKE_COMMAND} -E remove ${flex_meta_demo_generated_SOURCES}
-    COMMAND
-      ${CMAKE_COMMAND} -E echo " Creating ${flex_meta_demo_generated_SOURCES}."
-    COMMAND
-      "${CMAKE_COMMAND}"
-      -E
-      echo
-      "executing command: ${FULL_CMD}"
-    COMMAND
-      ${FULL_CMD}
-    COMMENT "(flex_meta_demo) running ${flextool}"
-    VERBATIM # to support \t for example
 )
 
 add_relative_include_dir(${LIB_NAME}
@@ -545,6 +502,85 @@ target_compile_definitions(${LIB_NAME} PRIVATE
 target_compile_definitions(${LIB_NAME} PUBLIC
   ${flex_meta_demo_PUBLIC_DEFINES}
   ${CLING_DEFINITIONS}
+)
+
+# TODO: DISABLE_DOCTEST
+target_compile_definitions(${LIB_NAME} PUBLIC
+  DISABLE_DOCTEST=1
+)
+
+# from cmake_helper_utils (conan package)
+get_all_compile_definitions(collected_defines
+  ${LIB_NAME}
+)
+
+# from cmake_helper_utils (conan package)
+get_all_include_directories(collected_includes
+  ${LIB_NAME}
+)
+
+set(FULL_CMD
+  ${flextool}
+      --indir=${CMAKE_CURRENT_SOURCE_DIR}
+      --outdir=${flextool_outdir}
+      --load_plugin=${flex_reflect_plugin_FILE}
+      --load_plugin=${flex_typeclass_plugin_FILE}
+      --load_plugin=${flex_meta_plugin_FILE}
+      --extra-arg=-I${cling_includes}
+      --extra-arg=-I${clang_includes}
+      # NOTE: Cling does not support compile_commands.json
+      # so we must add headers used by `flex_support_headers` package
+      # place into `flex_support_headers` includes that can be used by Cling
+      #--extra-arg=-I${chromium_base_headers}
+      #--extra-arg=-I${chromium_build_util_headers}
+      #--extra-arg=-I${basis_HEADER_DIR}
+      #--extra-arg=-I${flexlib_HEADER_DIR}
+      --extra-arg=-I${flextool_outdir}
+      # NOTE: generator expression, expands during build time
+      # if the ${ITEM} is non-empty, then append it
+      $<$<BOOL:${collected_defines}>:--extra-arg=-D$<JOIN:${collected_defines}, --extra-arg=-D>>
+      # NOTE: generator expression, expands during build time
+      # if the ${ITEM} is non-empty, then append it
+      $<$<BOOL:${collected_includes}>:--extra-arg=-I$<JOIN:${collected_includes}, --extra-arg=-I>>
+      --extra-arg=-Wno-undefined-inline
+      # custom define for basis
+      --extra-arg=-DDISABLE_DOCTEST=1
+      --extra-arg=-DDOCTEST_CONFIG_DISABLE=1
+      ${flextool_extra_args}
+      ${flextool_input_files}
+      # cling_scripts must be ending argument
+      --cling_scripts=${flex_support_headers_HEADER_FILE}
+      --cling_scripts=${flex_typeclass_plugin_settings}
+)
+
+# you can link with library via --extra-arg=-l
+# example: --extra-arg=-l${flexlib_file}
+add_custom_command(
+  OUTPUT
+    ${flex_meta_demo_generated_SOURCES}
+  COMMAND
+    ${CMAKE_COMMAND} -E echo " Removing ${flex_meta_demo_generated_SOURCES}."
+  COMMAND
+    ${CMAKE_COMMAND} -E remove ${flex_meta_demo_generated_SOURCES}
+  COMMAND
+    ${CMAKE_COMMAND} -E echo " Creating ${flex_meta_demo_generated_SOURCES}."
+  COMMAND
+    "${CMAKE_COMMAND}"
+    -E
+    echo
+    "executing command: ${FULL_CMD}"
+  COMMAND
+    "${FULL_CMD}"
+  # code generator COMMAND will only be launched
+  # if some of DEPENDS files were changed.
+  DEPENDS
+    ${flextool_input_files}
+  # NOTE: uses COMMAND_EXPAND_LISTS
+  # to support generator expressions
+  # see https://cmake.org/cmake/help/v3.13/command/add_custom_target.html
+  COMMAND_EXPAND_LISTS
+  COMMENT "(flex_meta_demo) running ${flextool}"
+  VERBATIM # to support \t for example
 )
 
 # install and export steps

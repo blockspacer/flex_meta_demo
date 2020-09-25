@@ -8,6 +8,9 @@ node_modules
 examples/webclient/dist
 build-*
 local_build
+_deps
+conan_auto_install
+cmake_utils
 
 # Mac OS X files
 *.DS_Store

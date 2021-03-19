@@ -171,7 +171,7 @@ class flex_meta_demo_conan_project(conan_build_helper.CMakePackage):
 
       if self._is_tests_enabled():
           self.requires("catch2/[>=2.1.0]@bincrafters/stable")
-          self.requires("conan_gtest/release-1.10.0@conan/stable")
+          self.requires("conan_gtest/stable@conan/stable")
           self.requires("FakeIt/[>=2.0.4]@gasuketsu/stable")
 
       self.requires("boost/1.71.0@dev/stable")
